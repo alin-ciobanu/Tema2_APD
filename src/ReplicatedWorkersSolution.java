@@ -236,7 +236,8 @@ class ReplicatedWorkers {
 			buffer = new char[D_CHARS];
 			int offset = 0;
 
-			while (currentDoc.read(buffer, offset, D_CHARS) != -1) {
+			int retW = currentDoc.read(buffer, offset, D_CHARS);
+			while (retW != -1) {
 
 				String workingString = new String(buffer);
 				char[] nextCh = new char[1];
@@ -253,6 +254,7 @@ class ReplicatedWorkers {
 				}
 
 				wp.putWork(new PartialSolution("map", workingString, delims, wordCount, i));
+				retW = currentDoc.read(buffer, offset, D_CHARS);
 
 			}
 
@@ -330,8 +332,6 @@ class ReplicatedWorkers {
 
 		in.close();
 		out.close();
-
-		System.out.println("bye");
 
 	}
 

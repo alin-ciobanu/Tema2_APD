@@ -5,6 +5,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -19,8 +21,10 @@ class PartialSolution {
 	String workingString;
 	ArrayList<Character> delims;
 	int index; // index-ul documentului (folosit pentru a cauta in vectorul de HashMap)
+	int indexOfDocVerified;
 	ArrayList<HashMap<String, Integer>> wordCount;
 	String mapOrReduce;
+	HashMap<Integer, Float> similarities;
 
 	public PartialSolution(String mapOrReduce, String workingString, ArrayList<Character> delims,
 			ArrayList<HashMap<String, Integer>> wordCount, int index) {
@@ -33,10 +37,26 @@ class PartialSolution {
 
 	}
 
+	public PartialSolution(String mapOrReduce, ArrayList<HashMap<String, Integer>> wordCount,
+			int index, int indexOfDocVerfied, HashMap<Integer, Float> similarities) {
+
+		this.mapOrReduce = mapOrReduce;
+		this.wordCount = wordCount;
+		this.index = index;
+		this.indexOfDocVerified = indexOfDocVerfied;
+		this.similarities = similarities;
+
+	}
+
 	@Override
 	public String toString() {
 
-		return "Working string is: " + workingString + "\n";
+		if (mapOrReduce == "map") {
+			return "Working string is: " + workingString + "\n";
+		}
+		else {
+			return "Checking files " + indexOfDocVerified + "and " + index;
+		}
 
 	}
 }
@@ -71,8 +91,6 @@ class Worker extends Thread {
 
 			}
 
-			System.out.println("index: " + ps.index);
-
 			StringTokenizer stTok = new StringTokenizer(workString, delimsSt);
 			String word;
 
@@ -95,13 +113,45 @@ class Worker extends Thread {
 			}
 		}
 
+		else if (ps.mapOrReduce == "reduce"){
+
+			HashMap<String, Integer> currentMap = ps.wordCount.get(ps.index);
+			HashMap<String, Integer> docVerifiedMap = ps.wordCount.get(ps.indexOfDocVerified);
+			float sum = 0;
+
+			Set<String> wordsInDocVerified = docVerifiedMap.keySet();
+			Iterator<String> it = wordsInDocVerified.iterator();
+			while (it.hasNext()) {
+
+				String currentWord = it.next();
+
+				if (currentMap.containsKey(currentWord)) {
+
+					float freqDocVerified =
+							((float) docVerifiedMap.get(currentWord)) / ((float) docVerifiedMap.size());
+					float freqCurrentMap =
+							((float) currentMap.get(currentWord)) / ((float) currentMap.size());
+
+					sum += freqDocVerified * freqCurrentMap * 100;
+
+				}
+
+			}
+
+			synchronized (ps.similarities) {
+				ps.similarities.remove(ps.index);
+				ps.similarities.put(ps.index, sum);
+			}
+
+		}
+
 
 
 	}
 
 	@Override
 	public void run() {
-		System.out.println("Thread-ul worker " + this.getName() + " a pornit...");
+		//	System.out.println("Thread-ul worker " + this.getName() + " a pornit...");
 		while (true) {
 			PartialSolution ps = wp.getWork();
 			if (ps == null) {
@@ -116,7 +166,7 @@ class Worker extends Thread {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Thread-ul worker " + this.getName() + " s-a terminat...");
+		//	System.out.println("Thread-ul worker " + this.getName() + " s-a terminat...");
 	}
 
 
@@ -161,7 +211,7 @@ class ReplicatedWorkers {
 		int D_CHARS = D / 2; // char-uri citite la un moment dat
 
 		line = in.readLine();
-		Float.parseFloat(line);
+		similarity_limit = Float.parseFloat(line);
 
 		line = in.readLine();
 		ND = Integer.parseInt(line);
@@ -177,16 +227,8 @@ class ReplicatedWorkers {
 		}
 
 		char[] buffer;
-		CyclicBarrier barrier = new CyclicBarrier(NT, new Runnable() {
-
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-				System.out.println("All threads arrived at barrier.");
-
-			}
-		});
-		int n_workers = NT;
+		int master = 1;
+		CyclicBarrier barrier = new CyclicBarrier(NT + master);
 
 		for (int i = 0; i < ND; i++) {
 
@@ -211,32 +253,85 @@ class ReplicatedWorkers {
 				}
 
 				wp.putWork(new PartialSolution("map", workingString, delims, wordCount, i));
-				if (n_workers > 0) {
-					Worker w = new Worker(wp, barrier);
-					w.start();
-					n_workers--;
-				}
 
 			}
 
 			currentDoc.close();
 
 		}
+
+		Worker[] workers = new Worker[NT];
+		for (int i = 0; i < NT; i++) {
+			workers[i] = new Worker(wp, barrier);
+			workers[i].start();
+		}
+
 		barrier.await();
+
+		for (int i = 0; i < NT; i++) {
+			workers[i].join();
+		}
+
+		HashMap<Integer, Float> similarities = new HashMap<Integer, Float>();
+
+		int indexOfDocVerfied = -1;
+		for (int i = 0; i < ND; i++) {
+			similarities.put(i, 100.0f);
+			if (docVerified.compareTo(docsChecked[i]) == 0) {
+				indexOfDocVerfied = i;
+			}
+		}
+		if (indexOfDocVerfied == -1) {
+			System.out.println("There's an error in the input file.\n" +
+					"No document selected (or bad name) for checking similarity with the others.");
+			System.exit(1);
+		}
 
 		for (int i = 0; i < ND; i++) {
 
 			if (docVerified.compareTo(docsChecked[i]) != 0) {
 
-
+				wp.putWork(new PartialSolution("reduce", wordCount, i,
+						indexOfDocVerfied, similarities));
 
 			}
 
 		}
 
+		for (int i = 0; i < NT; i++) {
+			workers[i] = new Worker(wp, barrier);
+			workers[i].start();
+		}
+		barrier.await();
+		for (int i = 0; i < NT; i++) {
+			workers[i].join();
+		}
+
+		out.write("Rezultate pentru: ");
+		out.write("(" + docVerified + ")");
+		out.write("\n\n");
+
+		for (int i = 0; i < ND; i++) {
+
+			if (docVerified.compareTo(docsChecked[i]) != 0) {
+
+				float similarity = similarities.get(i);
+
+				if (similarity > similarity_limit) {
+					out.write(docsChecked[i] + " ");
+					String similarity_string = similarity + "";
+					int indexOfDot = similarity_string.indexOf(".");
+					out.write("(" + similarity_string.substring(0, indexOfDot + 4) + "%)\n");
+				}
+
+			}
+
+		}
 
 		in.close();
 		out.close();
+
+		System.out.println("bye");
 
 	}
 

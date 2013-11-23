@@ -1,0 +1,170 @@
+﻿<div role="main" id="yui_3_9_1_2_1385070482892_404"><span id="maincontent"></span><h2 class="main" id="yui_3_9_1_2_1385070482892_403">Tema 2 - Indexarea documentelor folosind paradigma Map-Reduce</h2><div id="intro" class="box generalbox boxaligncenter"><div class="no-overflow"><p dir="ltr"><span data-mce-mark="1">Responsabili temă: Gabriel Guțu, Dragoș Comăneci</span></p>
+<p dir="ltr"><span data-mce-mark="1">Data publicării: 06.11.2013</span></p>
+<p dir="ltr"><span data-mce-mark="1">Termenul de predare: 23.11.2013</span></p>
+<p dir="ltr"><span style="color: #ff0000;" data-mce-mark="1">Update 12.11.2013, ora 1:30 AM: eliminare limitare la "cele mai frecvente cuvinte"</span></p>
+<p dir="ltr"><span style="color: #ff0000;" data-mce-mark="1"><span data-mce-mark="1">Update 12.11.2013, ora 9:00 PM: adăugare recomandare privitoare la șirul de delimitatori</span></span></p>
+<p dir="ltr"><span style="color: #ff0000;" data-mce-mark="1"><span data-mce-mark="1"></span></span></p>
+<p dir="ltr"><span data-mce-mark="1" style="color: #ff0000;">Update 16.11.2013, ora 10:50 PM:</span></p>
+<p dir="ltr"><span style="color: #ff0000;" data-mce-mark="1"><span data-mce-mark="1"></span></span></p>
+<ul>
+<li dir="ltr"><span style="color: #ff0000;">modificare numar zecimale pentru trunchiere la 3 in loc de 2</span></li>
+<li dir="ltr"><span style="color: #ff0000;">eliminare recomandare privind sirul de tokenizare; folositi orice tokeni considerati a fi "natural" eliminati</span></li>
+</ul>
+<p dir="ltr"><span style="color: #ff0000;" data-mce-mark="1"><span data-mce-mark="1"></span></span></p>
+<p><span data-mce-mark="1"><span data-mce-mark="1"><span style="color: #ff0000;">Tip 17.11.2013, ora 07:05 PM: valorile numerice din output nu reprezintă un sistem de referință pentru notarea temei; ele sunt aproximative, diferind de șirul de delimitatori folosit și de modul în care se face prelucrarea cuvintelor "de margine". Vă sugerăm, totuși, să returnați niște valori corecte relativ la implementarea voastră.</span><span data-mce-mark="1"></span></span></span></p>
+<p><span data-mce-mark="1"><span data-mce-mark="1"></span></span></p>
+<h2 dir="ltr"><span data-mce-mark="1">1. <span class="Apple-tab-span" data-mce-mark="1"> </span>Introducere. Cerinţele temei</span></h2>
+<p dir="ltr"><span data-mce-mark="1">Pentru a facilita obţinerea rapidă si precisă a informaţiilor existente in paginile Web, motoarele de căutare indexează (colectează, parsează si stochează) datele în avans, pentru a facilita procesele de căutare. Procesul se numeşte </span><span data-mce-mark="1">Web indexing</span><span data-mce-mark="1"> atunci cand se referă la indexarea paginilor existente în Internet.</span></p>
+<p dir="ltr"><span data-mce-mark="1">Căutarea unui cuvânt se poate face fie într-un document (sau o mulțime de documente) neindexat (dar, în general, într-un timp de execuție mult mai lung), ori într-un document (ori mulțime de documente) într-un timp mai rapid. Indexarea unui document se poate face în timp ce se execută o căutare în el pentru prima dată, ori se pot indexa în prealabil toate documentele. Pentru optimizarea timpului de căutare, motoarele de căutare cele mai populare fac indexarea totală a textului existent online (practic, indexarea și căutarea sunt pași complet separați).</span></p>
+<h3 dir="ltr"><span data-mce-mark="1">Cerinţele temei</span></h3>
+<p dir="ltr"><span data-mce-mark="1">În aceasta temă se cere scrierea unui </span><span data-mce-mark="1">program paralel in Java</span><span data-mce-mark="1"> care să realizeze indexarea unui set de documente primit ca input și apoi să verifice dacă un anumit document este plagiat, prin compararea similarității semantice a documentului curent vs. o serie de documente indexate.</span></p>
+<p dir="ltr"><span data-mce-mark="1">În urma procesului de indexare se determină numărul de apariții al fiecărui cuvânt existent într-un document, obținându-se o listă de perechi </span><span data-mce-mark="1">(cuvânt, număr de apariţii)</span><span data-mce-mark="1">. Programul trebuie să permită calcularea similarității semantice (sub formă de procent) între documentul primit ca parametru și toate documente indexate și să afișeze documentele cu grad maxim de similaritate.</span></p>
+<p dir="ltr"><span data-mce-mark="1">Pentru paralelizarea indexării sa va folosi paradigma </span><span data-mce-mark="1">Replicated Workers</span><span data-mce-mark="1"> (vezi </span><span data-mce-mark="1">Laborator 5</span><span data-mce-mark="1">) și modelul </span><span data-mce-mark="1">MapReduce</span><span data-mce-mark="1">. Fiecare document se va fragmenta în părţi de dimensiune fixă ce vor fi procesate în paralel (operațiunea de </span><span data-mce-mark="1">Map</span><span data-mce-mark="1">), pentru fiecare parte rezultând câte un vector parțial ce conține termenii și numărul de apariții ale acestora. Pasul următor îl reprezintă combinarea vectorilor (operațiunea de </span><span data-mce-mark="1">Reduce</span><span data-mce-mark="1">) în urma căruia se obține un vector ce caracterizează întregul document. Pentru fiecare document se vor calcula frecvențele de apariție ale cuvintelor dintr-un document, care vor reprezenta indexul documentului. <span style="text-decoration: line-through;" data-mce-mark="1">Pentru ca un cuvânt din documentul verificat împotriva plagiatului să fie considerat relevant într-un calcul de similaritate, cuvântul respectiv trebuie să se afle în vectorul care conține termenii cu frecvențele cele mai mari de apariție al documetului comparat.</span></span></p>
+<h2 dir="ltr"><span data-mce-mark="1">2. <span class="Apple-tab-span" data-mce-mark="1"> </span>Implementare</span></h2>
+<h3 dir="ltr"><span data-mce-mark="1">2.1 Paradigma Map-Reduce - Prezentare generala</span></h3>
+<p dir="ltr"><span data-mce-mark="1">Pentru rezolvarea acestei probleme se va folosi un model </span><span data-mce-mark="1">Replicated Workers</span><span data-mce-mark="1">, asemănător cu modelul </span><span data-mce-mark="1">MapReduce</span><span data-mce-mark="1"> folosit de inginerii de la </span><span data-mce-mark="1">Google</span><span data-mce-mark="1"> pentru procesarea unor seturi mari de documente în sisteme paralele și distribuite.</span><span data-mce-mark="1"> </span><a href="http://cs.curs.pub.ro/2012/pluginfile.php/21418/mod_assign/intro/mapreduce-osdi04.pdf"><span data-mce-mark="1">Acest articol</span></a><span data-mce-mark="1"> </span><span data-mce-mark="1">prezintă modelul </span><span data-mce-mark="1">MapReduce</span><span data-mce-mark="1"> folosit de </span><span data-mce-mark="1">Google</span><span data-mce-mark="1"> și o parte dintre aplicațiile lui (mai importante pentru înțelegerea modelului sunt primele 4 pagini).</span></p>
+<p dir="ltr"><span data-mce-mark="1">MapReduce</span><span data-mce-mark="1"> este un </span><span data-mce-mark="1">model de programare paralelă</span><span data-mce-mark="1"> (și implementarea asociată) pentru procesarea unor seturi imense de date folosind sute sau mii de procesoare. Modelul permite paralelizarea și distribuția automată a taskurilor. Paradigma </span><span data-mce-mark="1">MapReduce</span><span data-mce-mark="1"> se bazează pe existența a două funcții care îi dau și numele: </span><span data-mce-mark="1">map</span><span data-mce-mark="1"> și </span><span data-mce-mark="1">reduce</span><span data-mce-mark="1">. Funcția </span><span data-mce-mark="1">map</span><span data-mce-mark="1"> primește ca input o functie </span><span data-mce-mark="1">f</span><span data-mce-mark="1"> și o listă de elemente și returnează o noua listă de elemente, rezultată în urma aplicării funcției </span><span data-mce-mark="1">f</span><span data-mce-mark="1"> fiecărui element din lista inițială. Funcția </span><span data-mce-mark="1">reduce</span><span data-mce-mark="1"> combină rezultatele obtinuțe anterior.</span></p>
+<p dir="ltr"><span data-mce-mark="1">Mecanismul </span><span data-mce-mark="1">MapReduce</span><span data-mce-mark="1"> funcționează în modul următor:</span></p>
+<ul>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">utilizatorul cere procesarea unui set de documente; această cerere este adresată unui proces (fir de execuție) master;</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">master-ul împarte documentele în fragmente de dimensiuni fixe, care vor fi asignate unor procese (fire de execuție) </span><span data-mce-mark="1">worker</span><span data-mce-mark="1">; un </span><span data-mce-mark="1">worker</span><span data-mce-mark="1"> va executa pentru un fragment de fisier o operație numită “map”, care va genera niște rezultate parțiale având forma unor perechi de tip (cheie, valoare);</span></p>
+</li>
+</ul>
+<ul>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">Dupa ce operațiile “map” au fost executate, master-ul asignează </span><span data-mce-mark="1">worker</span><span data-mce-mark="1">-ilor task-uri de tip “reduce”, prin care se combină rezultatele parțiale.</span></p>
+</li>
+</ul>
+<h3 dir="ltr"><span data-mce-mark="1">2.2 Cerințe pentru problema propusă</span></h3>
+<p dir="ltr"><span data-mce-mark="1">Dându-se un set de </span><span data-mce-mark="1">ND</span><span data-mce-mark="1"> documente și un document </span><span data-mce-mark="1">DOC</span><span data-mce-mark="1"> de verificat împotriva plagiatului (prin calcularea gradului de similaitate cu celelalte documente), să se determine documentele cu gradul de similaritate mai mare decât un prag </span><span data-mce-mark="1">X</span><span data-mce-mark="1">.</span></p>
+<p dir="ltr"><span data-mce-mark="1">Gradul de similariate între două documente</span><span data-mce-mark="1"> se va calcula cu ajutorul formulei din </span><a href="http://www.umiacs.umd.edu/~jimmylin/publications/Elsayed_etal_ACL2008_short.pdf"><span data-mce-mark="1">acest articol</span></a><span data-mce-mark="1">:</span></p>
+<p dir="ltr"><span data-mce-mark="1"><span class="Apple-tab-span" data-mce-mark="1"> </span>sim(di, dj) = sum(f(t,di) * f(t,dj)) [%], unde t aparține lui V,</span></p>
+<p dir="ltr"><span data-mce-mark="1">în care:</span></p>
+<ul>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">di și dj sunt documentele ale căror grad de similaritate se dorește calculat</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">f(t, di) reprezintă </span><span data-mce-mark="1">frecvența de apariție </span><span data-mce-mark="1">a termenului </span><span data-mce-mark="1">t</span><span data-mce-mark="1"> în documentul </span><span data-mce-mark="1">di</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">V reprezintă vocabularul de termeni (se poate considera ca reuniunea termenilor din ele două documente)</span></p>
+</li>
+</ul>
+<p dir="ltr"><span data-mce-mark="1">Frecvența de apariție</span><span data-mce-mark="1"> a unui termen într-un document se calculează cu formula:</span></p>
+<p dir="ltr"><span data-mce-mark="1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f(t, d) = (nr_apariții_cuvânt(t, d) / nr_total_cuvinte(d)) * 100 [%],</span></p>
+<p dir="ltr"><span data-mce-mark="1">în care:</span></p>
+<ul>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">nr_apariții_cuvânt(t, d) este numărul de apariții ale termenului </span><span data-mce-mark="1">t</span><span data-mce-mark="1"> în documentul </span><span data-mce-mark="1">d</span><span data-mce-mark="1"></span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">nr_total_cuvinte(d) este numărul total de cuvinte din documentul </span><span data-mce-mark="1">d</span> <span style="text-decoration: line-through;" data-mce-mark="1">(în cazul problemei de față se poate considera ca fiind numărul de cuvinte cu cele mai mari frecvențe)</span></p>
+</li>
+</ul>
+<p dir="ltr"><span data-mce-mark="1">Pentru cerința descrisă mai sus se consideră:</span></p>
+<ul>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1"> [MAP]: &nbsp;</span><span data-mce-mark="1">Împărțirea fișierelor se va face în fragmente de câte </span><span data-mce-mark="1">D</span><span data-mce-mark="1"> octeți (cu excepția ultimului fragment, care poate fi mai scurt)</span></p>
+</li>
+</ul>
+<p dir="ltr"><span data-mce-mark="1">Observație</span><span data-mce-mark="1">:</span><span data-mce-mark="1"> </span><span data-mce-mark="1">Poate apărea problema ca fragmentul prelucrat de un worker să se termine sau să înceapă în mijlocul unui cuvânt. Se va adopta următoarea convenție: dacă fragmentul începe în mijlocul unui cuvânt, worker-ul va "sări peste" acel cuvânt; dacă fragmentul se termină în mijlocul unui cuvânt, worker-ul va prelucra și acel cuvant. În acest mod, cuvintele care sunt "la graniță" dintre două fragmente vor fi prelucrate tot timpul de worker-ul ce se ocupă de fragmentul care se află în fișier înaintea cuvântului respectiv.</span></p>
+<p dir="ltr"><span data-mce-mark="1">Astfel un task de tip “map”:</span></p>
+<ul>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">primește ca input: numele fișierului, poziția de unde începe să citească din fișier, și pozitia de sfârșit;</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">întoarce ca output: perechi de tip </span><span data-mce-mark="1">(cheie, valoare)</span><span data-mce-mark="1">, în cazul problemei de față: </span><span data-mce-mark="1">(nume_document, vector_parțial)</span><span data-mce-mark="1">. Vectorul parțial conține setul de cuvinte împreună cu numărul de apariții ale acestora.</span></p>
+</li>
+</ul>
+<ul>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">[REDUCE]: </span><span data-mce-mark="1">S</span><span data-mce-mark="1">e calculează similaritatea semantică între documentul primit ca parametru și toate documentele indexate. </span></p>
+</li>
+</ul>
+<h3 dir="ltr"><span data-mce-mark="1">2.3 Observații generale</span></h3>
+<ul>
+<li dir="ltr">
+<p dir="ltr"><span>rezultatele operațiilor "map" vor fi ținute în memorie; în mod normal ele s-ar fi scris si pe disc;</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span>ca mod de execuție, se pot folosi (deși nu este obligatoriu) obiecte de tip "thread pool" care sunt deja implementate în Java (vezi interfața </span><span>ExecutorService</span><span>); astfel, un thread worker poate prelucra mai multe task-uri;</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span>pentru simplificare se pot utiliza mai multe thread pool-uri – de ex. unul pentru operațiile de tip "map", și unul pentru operațiile de tip "reduce";</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span style="text-decoration: line-through;">cuvintele pot fi de orice dimensiune si conțin doar litere;</span></p>
+</li>
+</ul>
+<ul>
+<li dir="ltr"><span style="text-decoration: line-through;"><span style="color: #ff0000; text-decoration: line-through;">pentru tokenizare se recomandă folosirea șirului de delimitatori&nbsp;" \t\n\r\f"</span></span></li>
+</ul>
+<ul>
+<li dir="ltr">compararea între cuvinte nu va fi case sensitive (veți transforma toate cuvintele în cuvinte cu litere mici înainte de a le prelucra);</li>
+</ul>
+<ul>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">frecvențele se vor considera cu 3 zecimale, obținute prin trunchiere (nu prin rotunjire).</span></p>
+</li>
+</ul>
+<h2 dir="ltr"><span data-mce-mark="1">3. <span class="Apple-tab-span" data-mce-mark="1"> </span>Formatul datelor de intrare/ieşire.</span></h2>
+<p dir="ltr"><span data-mce-mark="1">Programul va primi ca argumente în linia de comandă: </span><span data-mce-mark="1">NT</span><span data-mce-mark="1"> (numărul de thread-uri worker), numele unui fișier de intrare și numele unui fișier de ieșire (în această ordine).</span></p>
+<p dir="ltr"><span data-mce-mark="1">Observație:</span><span data-mce-mark="1"> </span><span data-mce-mark="1">Se vor porni </span><span data-mce-mark="1">NT</span><span data-mce-mark="1"> thread-uri de tip </span><span data-mce-mark="1">Map</span><span data-mce-mark="1">, respectiv </span><span data-mce-mark="1">NT</span><span data-mce-mark="1"> thread-uri de tip </span><span data-mce-mark="1">Reduce</span><span data-mce-mark="1">.</span></p>
+<p dir="ltr"><span data-mce-mark="1">Fișierul ce conține datele de intrare are următorul format:</span></p>
+<ul>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">pe linia I</span><span data-mce-mark="1">: numele documentului </span><span data-mce-mark="1">DOC </span><span data-mce-mark="1">pentru care se dorește determinarea gradului de plagiere</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">pe linia II</span><span data-mce-mark="1">: dimensiunea D (în octeți) a fragmentelor în care se vor impărți fișierele</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">pe linia III:</span><span data-mce-mark="1"> numărul X reprezentând “pragul de similaritate” (ex.: vreau să mi se returneze documentele cu gradul de similaritate mai mare de </span><span data-mce-mark="1">X</span><span data-mce-mark="1"> față de documentul </span><span data-mce-mark="1">D</span><span data-mce-mark="1">)</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">pe linia IV:</span><span data-mce-mark="1"> numarul </span><span data-mce-mark="1">ND</span><span data-mce-mark="1"> de documente de tip text de indexat și în care se va face căutarea</span></p>
+</li>
+<li dir="ltr">
+<p dir="ltr"><span data-mce-mark="1">pe urmatoarele </span><span data-mce-mark="1">ND</span><span data-mce-mark="1"> linii: numele celor </span><span data-mce-mark="1">ND</span><span data-mce-mark="1"> documente (câte unul pe linie)</span></p>
+</li>
+</ul>
+<p dir="ltr"><span data-mce-mark="1">Observatie:</span><span data-mce-mark="1"> Toate fisierele de intrare vor contine doar caractere ASCII.</span></p>
+<p dir="ltr"><span data-mce-mark="1">În </span><span data-mce-mark="1">fișierul de ieșire</span><span data-mce-mark="1">, pentru documentul verificat se vor afișa numele documentelor cu gradul de similaritate mai mare ca X - fiecare nume pe câte un rand,</span><span data-mce-mark="1"> </span><span data-mce-mark="1">în ordine descrescătoare a gradului de similaritate - împreună cu gradul de similaritate.</span></p>
+<p dir="ltr"><span data-mce-mark="1">Formatul fisierului de iesire este urmatorul:</span></p>
+<p dir="ltr"><span data-mce-mark="1">Rezultate pentru: nume_document_</span><span data-mce-mark="1">D</span></p>
+<p dir="ltr"><span data-mce-mark="1">DOCUMENT_1 (sim(</span><span data-mce-mark="1">D, DOCUMENT_1))</span></p>
+<p dir="ltr"><span data-mce-mark="1">…</span></p>
+<p dir="ltr"><span data-mce-mark="1">DOCUMENT_P (sim(</span><span data-mce-mark="1">D, DOCUMENT_P)),</span></p>
+<p dir="ltr"><span data-mce-mark="1">unde sim(D,DOCUMENT_i) &gt; X, i = [1, … P]</span></p>
+<h3 dir="ltr"><span data-mce-mark="1">4. <span class="Apple-tab-span" data-mce-mark="1"> </span>Teste.</span></h3>
+<p dir="ltr"><span data-mce-mark="1">Pentru a verifica functionalitatea temei puteti folosi aceste </span><a href="http://cs.curs.pub.ro/2013/pluginfile.php/24153/mod_folder/content/0/model_date_test.zip?forcedownload=1"><span data-mce-mark="1">teste</span></a><span data-mce-mark="1">.</span></p>
+<h3 dir="ltr"><span data-mce-mark="1">5. <span class="Apple-tab-span" data-mce-mark="1"> </span>Resurse (opţional)</span></h3>
+<p dir="ltr"><a href="http://infolab.stanford.edu/~backrub/google.html"><span data-mce-mark="1">The Anatomy of a Large-Scale Hypertextual Web Search Engine</span></a></p>
+<p dir="ltr"><a href="http://www.joelonsoftware.com/items/2006/08/01.html"><span data-mce-mark="1">Alt articol introductiv despre MapReduce</span></a></p>
+<p dir="ltr"><a href="http://en.wikipedia.org/wiki/MapReduce"><span data-mce-mark="1">MapReduce on Wikipedia</span></a></p>
+<p dir="ltr"><span data-mce-mark="1">Algoritm pentru compararea textelor:</span></p>
+<p dir="ltr"><span data-mce-mark="1"><a href="http://www.umiacs.umd.edu/~jimmylin/publications/Elsayed_etal_ACL2008_short.pdf">http://www.umiacs.umd.edu/~jimmylin/publications/Elsayed_etal_ACL2008_short.pdf</a></span><span data-mce-mark="1"></span></p></div></div><div class="submissionstatustable"><h3 class="main">Submission status</h3><div class="box boxaligncenter submissionsummarytable"><table class="generaltable">
+<tbody><tr class="r0">
+<td class="cell c0" style="">Submission status</td>
+<td class="cell c1 lastcol" style="">No attempt</td>
+</tr>
+<tr class="r1">
+<td class="cell c0" style="">Grading status</td>
+<td class="submissionnotgraded cell c1 lastcol" style="">Not graded</td>
+</tr>
+<tr class="r0">
+<td class="cell c0" style="">Termen predare</td>
+<td class="cell c1 lastcol" style="">sâmbătă, 23 noiembrie 2013, 23:55</td>
+</tr>
+<tr class="r1 lastrow">
+<td class="cell c0" style="">Time remaining</td>
+<td class="cell c1 lastcol" style="">2 zile</td>
+</tr>
+</tbody>
+</table>
+</div><div class="box generalbox submissionaction"><div class="singlebutton"><form method="get" action="http://cs.curs.pub.ro/2013/mod/assign/view.php"><div><input type="submit" value="Add submission"><input type="hidden" name="id" value="2903"><input type="hidden" name="action" value="editsubmission"></div></form></div><div class="box boxaligncenter submithelp">Make changes to your submission</div></div></div></div>
